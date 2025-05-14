@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="pl-PL">
+<head>
+    <meta charset="UTF-8">
+    <title>Logowanie</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+</head>
+<body>
+    <form action="/home" method="post">
+        <label for="password">Wprowadź hasło:</label>
+        <input type="password" id="password" name="password" value="">
+        <input type="submit" value="Ok">
+        
+        {% if error %}
+        <p class="error">{{ error }}</p>
+        {% endif %}
+    </form>
+</body>
+</html>
