@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, url_for, session
 import paho.mqtt.client as mqtt
+import os
 import json
 
 app = Flask(__name__)
-
+app.secret_key = "admin123"
 passphrase = "admin123"
 ip_alarm = "http://100.115.166.47:5001"
 
@@ -30,12 +31,22 @@ client.loop_start()
 def login():
     return render_template("login.html")
 
+@app.route("/devices")
+def devices():
+    if not session.get("logged_in"):
+        return redirect(url_for("login"))
+    return render_template("devices.html")
+
 @app.route("/home", methods=["GET", "POST"])
 def home():
     if request.method == "GET":
-        return render_template("login.html")
+        if session.get("logged_in"):
+            return render_template("panel.html", ip_alarm=ip_alarm, passphrase=passphrase)
+        else:
+            return redirect(url_for("login"))
     elif request.method == "POST":
         if request.form["password"] == passphrase:
+            session["logged_in"] = True
             return render_template("panel.html", ip_alarm=ip_alarm, passphrase=passphrase)
         else:
             return render_template("login.html", error="Nieprawidłowe hasło.")
