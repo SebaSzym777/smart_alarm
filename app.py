@@ -7,16 +7,33 @@ app = Flask(__name__)
 app.secret_key = "admin123"
 passphrase = "admin123"
 ip_alarm = "http://100.115.166.47:5001"
+devices_state = {}
+
 
 # Zmienna do przechowywania stanu czujnika
 motion_detected = False
 
 # Funkcja obsługująca wiadomości MQTT
+
 def on_message(client, userdata, message):
-    global motion_detected
+    global motion_detected, devices_state
     try:
         payload = json.loads(message.payload.decode())
+        print(payload)
+        # Jeśli payload jest listą, można przetworzyć ją inaczej lub pominąć
+        if isinstance(payload, list):
+            print("Otrzymano listę zamiast słownika w MQTT:", payload)
+            return
+
+        # Aktualizacja stanu ruchu (motion_detected)
         motion_detected = payload.get("occupancy", False)
+	
+        # Aktualizacja stanu urządzeń - przykładowo, zakładamy, że temat zawiera nazwę urządzenia
+        topic_parts = message.topic.split('/')
+        if len(topic_parts) >= 2:
+            device_name = topic_parts[-1]
+            devices_state[device_name] = payload
+
     except Exception as e:
         print("Błąd dekodowania MQTT:", e)
 
@@ -24,7 +41,7 @@ def on_message(client, userdata, message):
 client = mqtt.Client()
 client.on_message = on_message
 client.connect("localhost", 1883)
-client.subscribe("zigbee2mqtt/czujnik_2")
+client.subscribe("zigbee2mqtt/#")
 client.loop_start()
 
 @app.route("/")
@@ -33,9 +50,13 @@ def login():
 
 @app.route("/devices")
 def devices():
-    if not session.get("logged_in"):
-        return redirect(url_for("login"))
-    return render_template("devices.html")
+    filtered_devices = {k: v for k, v in devices_state.items() if isinstance(v, dict) and ('battery' in v or 'occupancy' in v)}
+    return render_template("devices.html", devices=filtered_devices)
+
+@app.route('/devices_data')
+def devices_data():
+    filtered_devices = {k: v for k, v in devices_state.items() if isinstance(v, dict) and ('battery' in v or 'occupancy' in v)}
+    return jsonify(filtered_devices)
 
 @app.route("/home", methods=["GET", "POST"])
 def home():
@@ -50,7 +71,6 @@ def home():
             return render_template("panel.html", ip_alarm=ip_alarm, passphrase=passphrase)
         else:
             return render_template("login.html", error="Nieprawidłowe hasło.")
-
 # Nowa trasa do dynamicznego odczytu ruchu
 @app.route("/get_motion_status", methods=["POST"])
 def get_motion_status():

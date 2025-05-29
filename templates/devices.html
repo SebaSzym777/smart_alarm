@@ -1,15 +1,51 @@
-<!DOCTYPE html>
-<html lang="pl-PL">
+\<!DOCTYPE html>
+<html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <title>Zarządzanie urządzeniami</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='devices.css') }}">
+  <meta charset="UTF-8" />
+  <title>Lista urządzeń Zigbee</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='devices.css') }}">
+  <script>
+    async function fetchDevices() {
+      const response = await fetch('/devices_data');
+      const data = await response.json();
+
+      const tbody = document.getElementById('devices-tbody');
+      tbody.innerHTML = '';  // wyczyść tabelę
+
+      for (const [id, device] of Object.entries(data)) {
+        const battery = device.battery ?? 'brak danych';
+        let occupancy = 'brak danych';
+        if ('occupancy' in device) {
+          occupancy = device.occupancy ? 'Tak' : 'Nie';
+        }
+        const row = `<tr>
+          <td>${id}</td>
+          <td>${battery}</td>
+          <td>${occupancy}</td>
+        </tr>`;
+        tbody.insertAdjacentHTML('beforeend', row);
+      }
+    }
+
+    setInterval(fetchDevices, 2000);
+    window.onload = fetchDevices;
+  </script>
 </head>
 <body>
-    <div class="container">
-        <h1>Zarządzanie urządzeniami Zigbee</h1>
-        <p>Strona w przygotowaniu...</p>
-        <a href="/home"><button>Powrót do panelu</button></a>
-    </div>
+  <div class="container">
+    <h1>Lista urządzeń Zigbee</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>ID urządzenia</th>
+          <th>Poziom baterii (%)</th>
+          <th>Wykryto ruch</th>
+        </tr>
+      </thead>
+      <tbody id="devices-tbody">
+        <!-- Dane będą wstawiane dynamicznie -->
+      </tbody>
+    </table>
+  </div>
 </body>
 </html>
