@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "/home/pi/flask_alarm/alarm.py", line 153, in <module>
+    @app.route("/start_pairing", methods=["POST"])
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/flask/scaffold.py", line 449, in decorator
+    self.add_url_rule(rule, endpoint, f, **options)
+  File "/usr/lib/python3/dist-packages/flask/scaffold.py", line 50, in wrapper_func
+    return f(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/flask/app.py", line 1358, in add_url_rule
+    raise AssertionError(
+AssertionError: View function mapping is overwriting an existing endpoint function: start_pairing
+MQTT motion_detected: False
+Błąd przy przetwarzaniu MQTT: 'list' object has no attribute 'get'
+MQTT motion_detected: False
+Błąd przy przetwarzaniu MQTT: 'list' object has no attribute 'get'
+Błąd przy przetwarzaniu MQTT: 'list' object has no attribute 'get'
+MQTT motion_detected: False
+Błąd przy przetwarzaniu MQTT: 'list' object has no attribute 'get'

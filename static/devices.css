@@ -1,43 +1,129 @@
- body {
-        font-family: Arial, sans-serif;
-        background-color: #f7f9fb;
-        margin: 0;
-        padding: 20px;
-        color: #2c3e50;
-    }
+:root {
+    --bg-main: #0f0f0f;
+    --bg-card: rgba(30, 30, 30, 0.7);
+    --text-color: #f0f0f0;
+    --accent-blue: #42a5f5;
+    --accent-blue-dark: #1e88e5;
+    --glass-blur: blur(12px);
+    --button-radius: 12px;
+}
 
-    .container {
-        max-width: 600px;
-        margin: auto;
-        background-color: #fff;
-        border-radius: 10px;
-        padding: 30px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
+body {
+    font-family: "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(circle at top left, #1a1a1a, #000000);
+    margin: 0;
+    padding: 40px;
+    color: var(--text-color);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+}
 
-    h1 {
-        text-align: center;
-        margin-bottom: 30px;
-    }
+.container {
+    max-width: 800px;
+    width: 100%;
+    background: var(--bg-card);
+    backdrop-filter: var(--glass-blur);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 8px 32px rgba(66, 165, 245, 0.15);
+}
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 16px;
-    }
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-blue-dark));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 2.2em;
+    letter-spacing: 1px;
+}
 
-    th, td {
-        padding: 12px;
-        border-bottom: 1px solid #ddd;
-        text-align: left;
-    }
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 12px 12px;
+    font-size: 16px;
+    color: var(--text-color);
+}
 
-    th {
-        background-color: #3498db;
-        color: white;
-        border-radius: 6px 6px 0 0;
-    }
+th, td {
+    padding: 14px 24px;
+    background-color: rgba(50, 50, 50, 0.65);
+    backdrop-filter: blur(8px);
+    text-align: left;
+    border: none;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
 
-    tr:hover {
-        background-color: #f1f1f1;
-    }
+th {
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-blue-dark));
+    color: #fff;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(66, 165, 245, 0.3);
+}
+
+tr:hover td {
+    background-color: rgba(66, 165, 245, 0.1);
+}
+
+.button-container {
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.back-button,
+.pair-button,
+.cancel-button {
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    border: none;
+    border-radius: var(--button-radius);
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 4px 12px rgba(66, 165, 245, 0.2);
+}
+
+.back-button {
+    background: linear-gradient(135deg, #888888, #555555);
+}
+
+.back-button:hover {
+    background: linear-gradient(135deg, #999999, #666666);
+    transform: scale(1.03);
+}
+
+.pair-button {
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-blue-dark));
+}
+
+.pair-button:hover {
+    background: linear-gradient(135deg, #64b5f6, #2196f3);
+    transform: scale(1.03);
+}
+
+.cancel-button {
+    background: linear-gradient(135deg, #e53935, #b71c1c);
+}
+
+.cancel-button:hover {
+    background: linear-gradient(135deg, #ef5350, #c62828);
+    transform: scale(1.03);
+}
+
+#pairing-message {
+    color: var(--accent-blue);
+    text-align: center;
+    font-size: 15px;
+    margin-top: 8px;
+}

@@ -1,8 +1,8 @@
-\<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pl">
 <head>
   <meta charset="UTF-8" />
-  <title>Lista urządzeń Zigbee</title>
+  <title>Lista urządzeń Zigbeee</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='devices.css') }}">
   <script>
     async function fetchDevices() {
@@ -23,6 +23,7 @@
           <td>${battery}</td>
           <td>${occupancy}</td>
         </tr>`;
+        
         tbody.insertAdjacentHTML('beforeend', row);
       }
     }
@@ -46,6 +47,64 @@
         <!-- Dane będą wstawiane dynamicznie -->
       </tbody>
     </table>
+      <div class="button-container">
+        <a href="http://100.115.166.47:5000/home">
+          <button class="back-button">Panel alarmowy</button>
+        </a>
+          <button id="pair-button" class="pair-button" onclick="togglePairing()">Sparuj nowe urządzenie</button>
+            <p id="pairing-message" style="margin-top: 10px; font-weight: bold;"></p>
+            <script>
+              let pairingActive = false;
+              let countdown = null;
+              let endTime = null;
+
+              async function togglePairing() {
+                const button = document.getElementById("pair-button");
+                const msgEl = document.getElementById("pairing-message");
+
+                if (!pairingActive) {
+                  try {
+                    const response = await fetch('/start_pairing', { method: 'POST' });
+                    const data = await response.json();
+
+                    pairingActive = true;
+                    endTime = Date.now() + 60000;
+                    button.innerText = "Anuluj parowanie";
+                    button.classList.remove("pair-button");
+                    button.classList.add("cancel-button");
+                    msgEl.innerText = "Tryb parowania aktywny przez 60 sekund...";
+
+                    countdown = setInterval(() => {
+                      const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+                      msgEl.innerText = `Pozostało ${remaining} sekund parowania...`;
+
+                      if (remaining <= 0) {
+                        stopPairing();
+                      }
+                    }, 1000);
+                  } catch (err) {
+                    alert("Błąd połączenia z serwerem: " + err);
+                  }
+                } else {
+                  stopPairing(true);
+                }
+              }
+
+              function stopPairing(manual = false) {
+                const button = document.getElementById("pair-button");
+                const msgEl = document.getElementById("pairing-message");
+
+                pairingActive = false;
+                clearInterval(countdown);
+                countdown = null;
+                endTime = null;
+                button.innerText = "Sparuj nowe urządzenie";
+                button.classList.remove("cancel-button");
+                button.classList.add("pair-button");
+                msgEl.innerText = manual ? "Parowanie anulowane." : "Parowanie zakończone.";
+              }
+            </script>
+      </div>
   </div>
 </body>
 </html>

@@ -1,0 +1,100 @@
+ body {
+        font-family: Arial, sans-serif;
+        background-color: #f7f9fb;
+        margin: 0;
+        padding: 20px;
+        color: #2c3e50;
+    }
+
+    .container {
+        max-width: 600px;
+        margin: auto;
+        background-color: #fff;
+        border-radius: 10px;
+        padding: 30px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 16px;
+    }
+
+    th, td {
+        padding: 12px;
+        border-bottom: 1px solid #ddd;
+        text-align: left;
+    }
+
+    th {
+        background-color: #3498db;
+        color: white;
+        border-radius: 6px 6px 0 0;
+    }
+
+    tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    .button-container {
+    text-align: center;
+    margin-top: 30px;
+    }
+
+    .back-button {
+        padding: 12px 24px;
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .back-button:hover {
+        background-color: #2980b9;
+        }
+
+        .pair-button {
+        padding: 12px 24px;
+        background-color: #2ecc71;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
+        margin-left: 10px;
+        transition: background-color 0.3s ease;
+    }
+
+    .pair-button:hover {
+        background-color: #27ae60;
+    }
+
+    #pairing-message {
+        color: #27ae60;
+        font-size: 15px;
+    }
+
+    .cancel-button {
+        padding: 12px 24px;
+        background-color: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
+        margin-left: 10px;
+        transition: background-color 0.3s ease;
+    }
+
+    .cancel-button:hover {
+        background-color: #c0392b;
+    }  

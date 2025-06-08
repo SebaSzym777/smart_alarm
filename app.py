@@ -1,48 +1,12 @@
-from flask import Flask, render_template, request, jsonify, url_for, session
-import paho.mqtt.client as mqtt
-import os
-import json
+# app.py
+from flask import Flask, render_template, request, jsonify, url_for, session, redirect
+import requests
+
 
 app = Flask(__name__)
 app.secret_key = "admin123"
 passphrase = "admin123"
 ip_alarm = "http://100.115.166.47:5001"
-devices_state = {}
-
-
-# Zmienna do przechowywania stanu czujnika
-motion_detected = False
-
-# Funkcja obsługująca wiadomości MQTT
-
-def on_message(client, userdata, message):
-    global motion_detected, devices_state
-    try:
-        payload = json.loads(message.payload.decode())
-        print(payload)
-        # Jeśli payload jest listą, można przetworzyć ją inaczej lub pominąć
-        if isinstance(payload, list):
-            print("Otrzymano listę zamiast słownika w MQTT:", payload)
-            return
-
-        # Aktualizacja stanu ruchu (motion_detected)
-        motion_detected = payload.get("occupancy", False)
-	
-        # Aktualizacja stanu urządzeń - przykładowo, zakładamy, że temat zawiera nazwę urządzenia
-        topic_parts = message.topic.split('/')
-        if len(topic_parts) >= 2:
-            device_name = topic_parts[-1]
-            devices_state[device_name] = payload
-
-    except Exception as e:
-        print("Błąd dekodowania MQTT:", e)
-
-# MQTT setup
-client = mqtt.Client()
-client.on_message = on_message
-client.connect("localhost", 1883)
-client.subscribe("zigbee2mqtt/#")
-client.loop_start()
 
 @app.route("/")
 def login():
@@ -50,13 +14,29 @@ def login():
 
 @app.route("/devices")
 def devices():
-    filtered_devices = {k: v for k, v in devices_state.items() if isinstance(v, dict) and ('battery' in v or 'occupancy' in v)}
-    return render_template("devices.html", devices=filtered_devices)
+    try:
+        response = requests.post(f"{ip_alarm}/get_devices_state", json={"passphrase": passphrase})
+        data = response.json()
+        if data.get("status") == "ok":
+            return render_template("devices.html", devices=data["devices"])
+        else:
+            return render_template("devices.html", devices={})
+    except Exception as e:
+        return render_template("devices.html", devices={}, error=str(e))
+
 
 @app.route('/devices_data')
 def devices_data():
-    filtered_devices = {k: v for k, v in devices_state.items() if isinstance(v, dict) and ('battery' in v or 'occupancy' in v)}
-    return jsonify(filtered_devices)
+    try:
+        response = requests.post(f"{ip_alarm}/get_devices_state", json={"passphrase": passphrase})
+        data = response.json()
+        if data.get("status") == "ok":
+            return jsonify(data["devices"])
+        else:
+            return jsonify({})
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+
 
 @app.route("/home", methods=["GET", "POST"])
 def home():
@@ -71,10 +51,39 @@ def home():
             return render_template("panel.html", ip_alarm=ip_alarm, passphrase=passphrase)
         else:
             return render_template("login.html", error="Nieprawidłowe hasło.")
-# Nowa trasa do dynamicznego odczytu ruchu
+
+
 @app.route("/get_motion_status", methods=["POST"])
 def get_motion_status():
-    return jsonify(motion_detected=motion_detected)
+    try:
+        response = requests.post(f"{ip_alarm}/get_alarm_status", json={"passphrase": passphrase})
+        data = response.json()
+        motion_detected = data.get("alarm_status", False)
+        return jsonify(motion_detected=motion_detected)
+    except Exception as e:
+        return jsonify(motion_detected=False, error=str(e))
+
+
+@app.route("/start_pairing", methods=["POST"])
+def start_pairing():
+    try:
+        response = requests.post(f"{ip_alarm}/start_pairing", json={"passphrase": passphrase})
+        response.raise_for_status()
+        return jsonify(response.json())
+    except requests.RequestException as e:
+        return jsonify(message=f"Błąd sieci: {e}"), 500
+    except Exception as e:
+        return jsonify(message=f"Inny błąd: {str(e)}"), 500
+@app.route("/set_device_params", methods=["POST"])
+def set_device_params():
+    try:
+        data = request.json
+        data["passphrase"] = passphrase
+        response = requests.post(f"{ip_alarm}/set_device_params", json=data)
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify(message=f"Błąd: {e}"), 500
+
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0")
+    app.run(host="0.0.0.0", port=5000)

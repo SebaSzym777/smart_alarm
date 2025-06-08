@@ -4,17 +4,13 @@
     <meta charset="UTF-8">
     <title>Panel alarmowy</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='panel.css') }}">
-    <style>
-        .device {
-            margin-top: 10px;
-        }
-    </style>
     <script>
         "use strict";
         const ip_alarm = "{{ ip_alarm }}";
         const passphrase = "{{ passphrase }}";
         var alarm_status_old = false;
         var alarm_state_old = false;
+        var motion_status_old = null;
         var online = false;
 
         const colors = {
@@ -78,7 +74,7 @@
                     return;
                 }
 
-                const alarm_status = data.alarm_status;
+                var alarm_status = data.alarm_status;
                 if (alarm_status_old !== alarm_status) {
                     const el = document.getElementById("alarm_status");
                     el.innerText = alarm_status ? "AWARIA" : "BRAK AWARII";
@@ -113,7 +109,7 @@
                     return;
                 }
 
-                const alarm_state = data.alarm_state;
+                var alarm_state = data.alarm_state;
                 if (alarm_state_old !== alarm_state) {
                     document.getElementById("alarm_state").innerText = alarm_state ? "ALARM UZBROJONY" : "ALARM NIEUZBROJONY";
                     alarm_state_old = alarm_state;
@@ -130,27 +126,23 @@
             }); 
         }, 1000);
 
+        // Nowy setInterval do dynamicznego odczytu ruchu
         setInterval(() => {
-            fetch("/devices_data")
+            fetch("/get_motion_status", {
+                method: "POST"
+            })
             .then(response => response.json())
             .then(data => {
-                const container = document.getElementById("devices_list");
-                container.innerHTML = "";
-                const devices = data.devices_state || data; // zależnie od struktury JSON-a
-
-                for (const [name, device] of Object.entries(devices)) {
-                    const div = document.createElement("div");
-                    div.classList.add("device");
-                    const indicator = create_indicator(device.occupancy ? colors.red : colors.grey);
-                    const label = document.createElement("span");
-                    label.innerText = `${name}: ${device.occupancy ? "Wykryto ruch" : "Brak ruchu"}`;
-                    div.appendChild(indicator);
-                    div.appendChild(label);
-                    container.appendChild(div);
+                const motion = data.motion_detected;
+                if (motion_status_old !== motion) {
+                    const motionEl = document.getElementById("motion_status");
+                    motionEl.innerText = motion ? "Wykryto ruch" : "Brak ruchu";
+                    motionEl.prepend(create_indicator(motion ? colors.red : colors.grey));
+                    motion_status_old = motion;
                 }
             })
             .catch(error => {
-                console.log("Błąd odczytu czujników:", error);
+                console.log("Błąd odczytu ruchu:", error);
             });
         }, 1000);
 
@@ -170,14 +162,14 @@
                     if (data.actually_accepted) {
                         alert(`Udało się potwierdzić alarm, odpowiedź serwera: ${data.message}`);
                     } else {
-                        alert(`Alarm nie wymagał potwierdzenia. Odpowiedź serwera: ${data.message}`)
+                        alert(`Udało się wysłać polecenie potwierdzenia alarmu, lecz alarm nie wymagał potwierdzenia, odpowiedź serwera: ${data.message}`)
                     }
                 } else {
-                    alert(`Nie udało się potwierdzić alarmu, odpowiedź serwera: ${data.message}`);
+                    alert(`Zapytanie przeszło, lecz wystąpił inny problem, nie udało się potwierdzić alarmu, odpowiedź serwera: ${data.message}`);
                 }
             })
             .catch(error => {
-                alert(`Błąd połączenia przy potwierdzaniu alarmu: ${error}`);
+                alert(`Potwierdzenie alarmu - błąd połączenia: ${error}`);
             });
         }
     </script>
@@ -191,23 +183,22 @@
             <button onclick="change_alarm_state(true)">Uzbrój alarm</button>
             <button onclick="change_alarm_state(false)">Rozbrój alarm</button>
             <button onclick="alarm_accept()">Potwierdź alarm</button>
-            <a href="/devices">
-                <button>Urządzenia</button>
-            </a>
+	    <a href="/devices">
+		<button>Urządzenia</button>
+	    </a>
         </div>
 
         <div class="status">
+            <div id="motion_status">
+                <span class="indicator"></span>
+                Brak ruchu
+            </div>
             <div id="alarm_state">ALARM NIEUZBROJONY</div>
             <div id="online_offline">
                 <span class="indicator"></span>
                 OFFLINE
             </div>
             <div id="alarm_status">BRAK AWARII</div>
-        </div>
-
-        <h2>Czujniki ruchu</h2>
-        <div id="devices_list">
-            <!-- Czujniki będą wstawiane dynamicznie -->
         </div>
     </div>
 </body>

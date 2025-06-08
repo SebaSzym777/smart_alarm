@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pl-PL">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel alarmowy</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='panel.css') }}">
+    <style>
+        .sensor-list {
+            margin-top: 20px;
+        }
+        .sensor {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .sensor .indicator {
+            margin-right: 10px;
+        }
+    </style>
+    <script>
+        "use strict";
+        const ip_alarm = "{{ ip_alarm }}";
+        const passphrase = "{{ passphrase }}";
+        var alarm_status_old = false;
+        var alarm_state_old = false;
+        var online = false;
+
+        const colors = {
+            green: "#2ecc71",
+            red: "#e74c3c",
+            grey: "#808080",
+        };
+
+        const html_mark_online = () => {
+            const el = document.getElementById("online_offline");
+            el.innerText = "ONLINE";
+            el.prepend(create_indicator(colors.green));
+        }
+
+        const html_mark_offline = () => {
+            const el = document.getElementById("online_offline");
+            el.innerText = "OFFLINE";
+            el.prepend(create_indicator(colors.red));
+        }
+
+        const create_indicator = (color) => {
+            const dot = document.createElement("span");
+            dot.classList.add("indicator");
+            dot.style.backgroundColor = color;
+            return dot;
+        }
+
+        const change_alarm_state = on => {
+            const action_string = on ? "uzbroiæ" : "rozbroiæ";
+
+            fetch(ip_alarm + "/change_alarm_state", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({state: on, passphrase: passphrase})
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.status === "ok"
+                    ? `Uda³o siê ${action_string} alarm: ${data.message}`
+                    : `B³¹d: nie uda³o siê ${action_string} alarmu: ${data.message}`);
+            })
+            .catch(error => {
+                alert(`B³¹d po³¹czenia: ${error}`);
+            });
+        };
+
+        const alarm_accept = () => {
+            fetch(ip_alarm + "/alarm_accept", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({passphrase: passphrase})
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.status === "ok"
+                    ? (data.actually_accepted ? `Alarm potwierdzony: ${data.message}` : `Nie by³o aktywnego alarmu: ${data.message}`)
+                    : `B³¹d: ${data.message}`);
+            })
+            .catch(error => {
+                alert(`B³¹d po³¹czenia: ${error}`);
+            });
+        };
+
+        setInterval(() => {
+            fetch(ip_alarm + "/get_alarm_status", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({passphrase: passphrase})
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status !== "ok") return;
+
+                const status = data.alarm_status;
+                if (alarm_status_old !== status) {
+                    const el = document.getElementById("alarm_status");
+                    el.innerText = status ? "AWARIA" : "BRAK AWARII";
+                    el.prepend(create_indicator(status ? colors.red : colors.grey));
+                    alarm_status_old = status;
+                }
+
+                if (!online) {
+                    online = true;
+                    html_mark_online();
+                }
+            })
+            .catch(err => {
+                online = false;
+                html_mark_offline();
+                console.log(err);
+            });
+        }, 1000);
+
+        setInterval(() => {
+            fetch(ip_alarm + "/get_alarm_state", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({passphrase: passphrase})
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status !== "ok") return;
+
+                const state = data.alarm_state;
+                if (alarm_state_old !== state) {
+                    document.getElementById("alarm_state").innerText = state ? "ALARM UZBROJONY" : "ALARM NIEUZBROJONY";
+                    alarm_state_old = state;
+                }
+
+                if (!online) {
+                    online = true;
+                    html_mark_online();
+                }
+            })
+            .catch(err => {
+                online = false;
+                html_mark_offline();
+                console.log(err);
+            });
+        }, 1000);
+
+        // ?? Dynamiczne odœwie¿anie listy czujników
+        setInterval(() => {
+            fetch("/devices_data")
+            .then(res => res.json())
+            .then(devices => {
+                const listContainer = document.getElementById("sensors_list");
+                listContainer.innerHTML = "";
+
+                Object.keys(devices).forEach(deviceId => {
+                    const sensorDiv = document.createElement("div");
+                    sensorDiv.classList.add("sensor");
+
+                    const isActive = devices[deviceId];
+                    const color = isActive ? colors.red : colors.grey;
+
+                    sensorDiv.appendChild(create_indicator(color));
+                    sensorDiv.appendChild(document.createTextNode(deviceId + (isActive ? " – WYKRYTO RUCH" : " – brak ruchu")));
+
+                    listContainer.appendChild(sensorDiv);
+                });
+            })
+            .catch(err => {
+                console.log("B³¹d pobierania danych o czujnikach:", err);
+            });
+        }, 1000);
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Panel alarmowy</h1>
+
+        <div class="controls">
+            <button onclick="change_alarm_state(true)">Uzbrój alarm</button>
+            <button onclick="change_alarm_state(false)">Rozbrój alarm</button>
+            <button onclick="alarm_accept()">PotwierdŸ alarm</button>
+            <a href="/devices"><button>Urz¹dzenia</button></a>
+        </div>
+
+        <div class="status">
+            <div id="alarm_state">ALARM NIEUZBROJONY</div>
+            <div id="online_offline"><span class="indicator"></span>OFFLINE</div>
+            <div id="alarm_status">BRAK AWARII</div>
+        </div>
+
+        <div class="sensor-list">
+            <h2>Czujniki ruchu</h2>
+            <div id="sensors_list">
+                <!-- czujniki bêd¹ wstawiane tutaj -->
+            </div>
+        </div>
+    </div>
+</body>
+</html>
